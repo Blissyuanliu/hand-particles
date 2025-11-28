@@ -1,0 +1,664 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 <!DOCTYPE html>\
+<html lang="zh-CN">\
+<head>\
+    <meta charset="UTF-8">\
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">\
+    <title>\uc0\u27785 \u28024 \u24335 \u25163 \u21183 \u31890 \u23376 \u31995 \u32479  - Immersive Hand Particles</title>\
+    <style>\
+        body \{\
+            margin: 0;\
+            overflow: hidden;\
+            background-color: #050505;\
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\
+            color: white;\
+            user-select: none;\
+        \}\
+\
+        #canvas-container \{\
+            position: absolute;\
+            top: 0;\
+            left: 0;\
+            width: 100vw;\
+            height: 100vh;\
+            z-index: 1;\
+        \}\
+\
+        /* \uc0\u38544 \u34255 \u30340 \u35270 \u39057 \u20803 \u32032 \u65292 \u29992 \u20110 MediaPipe\u22788 \u29702  */\
+        #input-video \{\
+            position: absolute;\
+            top: 0;\
+            left: 0;\
+            width: 1px;\
+            height: 1px;\
+            opacity: 0;\
+            pointer-events: none;\
+        \}\
+\
+        /* \uc0\u32472 \u21046 \u23618 \u65292 \u20165 \u22312 \u32472 \u21046 \u27169 \u24335 \u19979 \u28608 \u27963  */\
+        #draw-layer \{\
+            position: absolute;\
+            top: 0;\
+            left: 0;\
+            width: 100vw;\
+            height: 100vh;\
+            z-index: 5;\
+            cursor: crosshair;\
+            display: none;\
+        \}\
+\
+        /* UI \uc0\u30028 \u38754  */\
+        #ui-container \{\
+            position: absolute;\
+            top: 20px;\
+            left: 20px;\
+            width: 300px;\
+            padding: 20px;\
+            background: rgba(20, 20, 30, 0.7);\
+            backdrop-filter: blur(10px);\
+            border-radius: 15px;\
+            border: 1px solid rgba(255, 255, 255, 0.1);\
+            z-index: 10;\
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);\
+            transition: opacity 0.3s;\
+        \}\
+\
+        h1 \{\
+            font-size: 18px;\
+            margin: 0 0 15px 0;\
+            text-transform: uppercase;\
+            letter-spacing: 2px;\
+            color: #00f2ff;\
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);\
+        \}\
+\
+        .control-group \{\
+            margin-bottom: 15px;\
+        \}\
+\
+        label \{\
+            display: block;\
+            font-size: 12px;\
+            margin-bottom: 5px;\
+            color: #aaa;\
+        \}\
+\
+        input[type="range"] \{\
+            width: 100%;\
+            accent-color: #00f2ff;\
+            background: transparent;\
+        \}\
+\
+        input[type="color"] \{\
+            width: 100%;\
+            height: 30px;\
+            border: none;\
+            background: none;\
+            cursor: pointer;\
+        \}\
+\
+        select \{\
+            width: 100%;\
+            padding: 8px;\
+            background: rgba(0, 0, 0, 0.5);\
+            color: white;\
+            border: 1px solid rgba(255, 255, 255, 0.2);\
+            border-radius: 5px;\
+            outline: none;\
+        \}\
+\
+        button \{\
+            width: 100%;\
+            padding: 10px;\
+            background: linear-gradient(45deg, #00f2ff, #0078ff);\
+            border: none;\
+            border-radius: 5px;\
+            color: white;\
+            font-weight: bold;\
+            cursor: pointer;\
+            transition: transform 0.1s;\
+        \}\
+\
+        button:active \{\
+            transform: scale(0.98);\
+        \}\
+\
+        button.active-mode \{\
+            background: linear-gradient(45deg, #ff0055, #ff5500);\
+        \}\
+\
+        #status \{\
+            position: absolute;\
+            bottom: 20px;\
+            left: 20px;\
+            font-size: 12px;\
+            color: rgba(255, 255, 255, 0.5);\
+            z-index: 10;\
+        \}\
+\
+        #webcam-preview \{\
+            position: absolute;\
+            bottom: 20px;\
+            right: 20px;\
+            width: 160px;\
+            height: 120px;\
+            border-radius: 10px;\
+            overflow: hidden;\
+            border: 2px solid rgba(255, 255, 255, 0.2);\
+            z-index: 10;\
+            transform: scaleX(-1); /* \uc0\u38236 \u20687 \u32763 \u36716  */\
+        \}\
+    </style>\
+    \
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>\
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>\
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>\
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>\
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>\
+</head>\
+<body>\
+\
+    <div id="canvas-container"></div>\
+    \
+    <canvas id="draw-layer"></canvas>\
+\
+    <video id="input-video"></video>\
+    \
+    <canvas id="webcam-preview"></canvas>\
+\
+    <div id="ui-container">\
+        <h1>Particle Motion</h1>\
+        \
+        <div class="control-group">\
+            <label>\uc0\u27169 \u22411 \u24418 \u29366  / Shape</label>\
+            <select id="shape-select">\
+                <option value="nebula">\uc0\u26143 \u20113  (Nebula)</option>\
+                <option value="heart">\uc0\u29233 \u24515  (Heart)</option>\
+                <option value="ring">\uc0\u33021 \u37327 \u29615  (Ring)</option>\
+            </select>\
+        </div>\
+\
+        <div class="control-group">\
+            <label>\uc0\u31890 \u23376 \u39068 \u33394  / Color</label>\
+            <input type="color" id="color-picker" value="#00f2ff">\
+        </div>\
+\
+        <div class="control-group">\
+            <label>\uc0\u31890 \u23376 \u25193 \u25955 \u24230  / Spread (<span id="spread-val">1.0</span>)</label>\
+            <input type="range" id="spread-slider" min="0.1" max="5.0" step="0.1" value="1.0">\
+        </div>\
+\
+        <div class="control-group">\
+            <label>\uc0\u31890 \u23376 \u25968 \u37327  / Density (Reset to apply)</label>\
+            <input type="range" id="density-slider" min="5000" max="30000" step="1000" value="15000">\
+        </div>\
+\
+        <div class="control-group">\
+            <button id="draw-mode-btn">\uc0\u36827 \u20837 \u25163 \u32472 \u27169 \u24335  (Draw)</button>\
+        </div>\
+        \
+        <div style="font-size:11px; color:#888; margin-top:10px;">\
+            \uc0\u25552 \u31034 : \u24352 \u24320 \u25163 \u25484 =\u25193 \u25955 \u65292 \u25569 \u25331 =\u32858 \u21512 \u12290 <br>\
+            Tip: Open hand = Explode, Fist = Collapse.\
+        </div>\
+    </div>\
+\
+    <div id="status">\uc0\u27491 \u22312 \u21021 \u22987 \u21270  AI \u27169 \u22411 ... / Initializing AI...</div>\
+\
+    <script>\
+        // ================= \uc0\u20840 \u23616 \u21464 \u37327  =================\
+        let scene, camera, renderer;\
+        let particles, geometry, material;\
+        let bgParticles;\
+        let positions, targets, initialPositions;\
+        let particleCount = 15000;\
+        let mouse = new THREE.Vector2();\
+        \
+        // \uc0\u29366 \u24577 \u21464 \u37327 \
+        let currentShape = 'nebula';\
+        let isDrawingMode = false;\
+        let drawnPoints = []; // \uc0\u23384 \u20648 \u25163 \u32472 \u30340 \u28857 \
+        let handOpenness = 0; // 0 (\uc0\u38381 \u21512 ) - 1 (\u24352 \u24320 )\
+        let baseColor = new THREE.Color(0x00f2ff);\
+        let spreadFactor = 1.0;\
+\
+        // HTML \uc0\u20803 \u32032 \
+        const videoElement = document.getElementById('input-video');\
+        const previewCanvas = document.getElementById('webcam-preview');\
+        const previewCtx = previewCanvas.getContext('2d');\
+        const drawCanvas = document.getElementById('draw-layer');\
+        const drawCtx = drawCanvas.getContext('2d');\
+        const statusEl = document.getElementById('status');\
+\
+        // ================= \uc0\u21021 \u22987 \u21270  =================\
+        init();\
+        initMediaPipe();\
+        animate();\
+\
+        function init() \{\
+            // 1. \uc0\u22330 \u26223 \u35774 \u32622 \
+            scene = new THREE.Scene();\
+            scene.fog = new THREE.FogExp2(0x050505, 0.002);\
+\
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\
+            camera.position.z = 50;\
+\
+            renderer = new THREE.WebGLRenderer(\{ antialias: true, alpha: true \});\
+            renderer.setSize(window.innerWidth, window.innerHeight);\
+            renderer.setPixelRatio(window.devicePixelRatio);\
+            document.getElementById('canvas-container').appendChild(renderer.domElement);\
+\
+            // 2. \uc0\u21019 \u24314 \u32972 \u26223 \u26143 \u31354  (Background Particles)\
+            createBackgroundStars();\
+\
+            // 3. \uc0\u21019 \u24314 \u20027 \u31890 \u23376 \u31995 \u32479 \
+            createParticles(particleCount);\
+\
+            // 4. \uc0\u20107 \u20214 \u30417 \u21548 \
+            window.addEventListener('resize', onWindowResize);\
+            setupUI();\
+            setupDrawingEvents();\
+        \}\
+\
+        // \uc0\u29983 \u25104 \u21457 \u20809 \u22278 \u24418 \u32441 \u29702 \
+        function getSprite() \{\
+            const canvas = document.createElement('canvas');\
+            canvas.width = 32;\
+            canvas.height = 32;\
+            const context = canvas.getContext('2d');\
+            const gradient = context.createRadialGradient(16, 16, 0, 16, 16, 16);\
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');\
+            gradient.addColorStop(0.2, 'rgba(255,255,255,0.8)');\
+            gradient.addColorStop(0.5, 'rgba(255,255,255,0.2)');\
+            gradient.addColorStop(1, 'rgba(0,0,0,0)');\
+            context.fillStyle = gradient;\
+            context.fillRect(0, 0, 32, 32);\
+            \
+            const texture = new THREE.Texture(canvas);\
+            texture.needsUpdate = true;\
+            return texture;\
+        \}\
+\
+        function createBackgroundStars() \{\
+            const bgGeo = new THREE.BufferGeometry();\
+            const bgCount = 2000;\
+            const bgPos = new Float32Array(bgCount * 3);\
+            \
+            for(let i=0; i<bgCount * 3; i++) \{\
+                bgPos[i] = (Math.random() - 0.5) * 400; // \uc0\u24191 \u38420 \u31354 \u38388 \
+            \}\
+            bgGeo.setAttribute('position', new THREE.BufferAttribute(bgPos, 3));\
+            \
+            const bgMat = new THREE.PointsMaterial(\{\
+                size: 0.8,\
+                color: 0xffffff,\
+                transparent: true,\
+                opacity: 0.6,\
+                map: getSprite(),\
+                blending: THREE.AdditiveBlending,\
+                depthWrite: false\
+            \});\
+\
+            bgParticles = new THREE.Points(bgGeo, bgMat);\
+            scene.add(bgParticles);\
+        \}\
+\
+        function createParticles(count) \{\
+            if (particles) scene.remove(particles);\
+            \
+            particleCount = count;\
+            geometry = new THREE.BufferGeometry();\
+            positions = new Float32Array(particleCount * 3);\
+            targets = new Float32Array(particleCount * 3);\
+            const colors = new Float32Array(particleCount * 3);\
+\
+            for (let i = 0; i < particleCount; i++) \{\
+                // \uc0\u21021 \u22987 \u20301 \u32622 \u38543 \u26426 \
+                positions[i * 3] = (Math.random() - 0.5) * 100;\
+                positions[i * 3 + 1] = (Math.random() - 0.5) * 100;\
+                positions[i * 3 + 2] = (Math.random() - 0.5) * 100;\
+\
+                // \uc0\u21021 \u22987 \u39068 \u33394 \
+                colors[i * 3] = baseColor.r;\
+                colors[i * 3 + 1] = baseColor.g;\
+                colors[i * 3 + 2] = baseColor.b;\
+            \}\
+\
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));\
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));\
+\
+            material = new THREE.PointsMaterial(\{\
+                size: 0.6,\
+                vertexColors: true,\
+                map: getSprite(),\
+                blending: THREE.AdditiveBlending,\
+                depthWrite: false,\
+                transparent: true,\
+                opacity: 0.9\
+            \});\
+\
+            particles = new THREE.Points(geometry, material);\
+            scene.add(particles);\
+            \
+            // \uc0\u21021 \u22987 \u21270 \u30446 \u26631 \u20301 \u32622 \
+            updateTargets(currentShape);\
+        \}\
+\
+        // ================= \uc0\u24418 \u29366 \u29983 \u25104 \u36923 \u36753  =================\
+        function updateTargets(shapeType) \{\
+            const arr = targets;\
+            \
+            if (shapeType === 'nebula') \{\
+                for (let i = 0; i < particleCount; i++) \{\
+                    const r = 20 * Math.cbrt(Math.random()); \
+                    const theta = Math.random() * 2 * Math.PI;\
+                    const phi = Math.acos(2 * Math.random() - 1);\
+                    \
+                    arr[i*3] = r * Math.sin(phi) * Math.cos(theta);\
+                    arr[i*3+1] = r * Math.sin(phi) * Math.sin(theta);\
+                    arr[i*3+2] = r * Math.cos(phi);\
+                \}\
+            \} \
+            else if (shapeType === 'heart') \{\
+                for (let i = 0; i < particleCount; i++) \{\
+                    let t = Math.random() * Math.PI * 2;\
+                    let u = Math.random() * Math.PI; // Z depth\
+                    \
+                    // \uc0\u24515 \u24418 \u26041 \u31243 \
+                    let x = 16 * Math.pow(Math.sin(t), 3);\
+                    let y = 13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t);\
+                    let z = (Math.random() - 0.5) * 10; // \uc0\u21402 \u24230 \
+\
+                    arr[i*3] = x;\
+                    arr[i*3+1] = y;\
+                    arr[i*3+2] = z;\
+                \}\
+            \}\
+            else if (shapeType === 'ring') \{\
+                 for (let i = 0; i < particleCount; i++) \{\
+                    const angle = Math.random() * Math.PI * 2;\
+                    const radius = 20 + Math.random() * 5;\
+                    arr[i*3] = Math.cos(angle) * radius;\
+                    arr[i*3+1] = Math.sin(angle) * radius;\
+                    arr[i*3+2] = (Math.random() - 0.5) * 2;\
+                 \}\
+            \}\
+            else if (shapeType === 'custom') \{\
+                // \uc0\u22914 \u26524 \u27809 \u26377 \u30011 \u28857 \u65292 \u23601 \u20445 \u25345 \u21407 \u20301 \u25110 \u38543 \u26426 \
+                if (drawnPoints.length === 0) return;\
+                \
+                for (let i = 0; i < particleCount; i++) \{\
+                    // \uc0\u20174 \u32472 \u21046 \u30340 \u28857 \u20013 \u21462 \u26679 \
+                    const p = drawnPoints[i % drawnPoints.length];\
+                    // \uc0\u28155 \u21152 \u19968 \u28857 \u38543 \u26426 \u25238 \u21160 \u65292 \u35753 \u32447 \u26465 \u30475 \u36215 \u26469 \u20687 \u21457 \u20809 \u24102 \
+                    arr[i*3] = p.x + (Math.random()-0.5) * 1.5;\
+                    arr[i*3+1] = p.y + (Math.random()-0.5) * 1.5;\
+                    arr[i*3+2] = p.z + (Math.random()-0.5) * 1.5;\
+                \}\
+            \}\
+        \}\
+\
+        // ================= MediaPipe Hands \uc0\u38598 \u25104  =================\
+        function initMediaPipe() \{\
+            const hands = new Hands(\{locateFile: (file) => \{\
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/$\{file\}`;\
+            \}\});\
+\
+            hands.setOptions(\{\
+                maxNumHands: 1,\
+                modelComplexity: 1,\
+                minDetectionConfidence: 0.5,\
+                minTrackingConfidence: 0.5\
+            \});\
+\
+            hands.onResults(onHandsResults);\
+\
+            const cameraUtils = new Camera(videoElement, \{\
+                onFrame: async () => \{\
+                    await hands.send(\{image: videoElement\});\
+                \},\
+                width: 320,\
+                height: 240\
+            \});\
+            cameraUtils.start()\
+                .then(() => statusEl.innerText = "\uc0\u25668 \u20687 \u22836 \u24050 \u23601 \u32490  / Camera Ready")\
+                .catch(e => statusEl.innerText = "\uc0\u25668 \u20687 \u22836 \u38169 \u35823  (\u35831 \u20801 \u35768 \u26435 \u38480 ) / Camera Error");\
+        \}\
+\
+        function onHandsResults(results) \{\
+            // \uc0\u32472 \u21046 \u39044 \u35272 \
+            previewCtx.save();\
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);\
+            previewCtx.drawImage(results.image, 0, 0, previewCanvas.width, previewCanvas.height);\
+            \
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) \{\
+                const landmarks = results.multiHandLandmarks[0];\
+                \
+                // \uc0\u31616 \u21333 \u30340 \u32472 \u21046 \u39592 \u26550 \u21040 \u39044 \u35272 \u22270 \
+                drawConnectors(previewCtx, landmarks, HAND_CONNECTIONS, \{color: '#00FF00', lineWidth: 2\});\
+                \
+                // \uc0\u35745 \u31639 \u25163 \u21183 \u24352 \u21512 \u24230 \
+                // \uc0\u21462 \u22823 \u25287 \u25351 \u25351 \u23574 (4)\u21644 \u39135 \u25351 \u25351 \u23574 (8)\u30340 \u36317 \u31163 \u65292 \u20197 \u21450 \u20854 \u20182 \u25351 \u23574 \u21040 \u25163 \u25484 (0)\u30340 \u36317 \u31163 \
+                const thumbTip = landmarks[4];\
+                const indexTip = landmarks[8];\
+                const wrist = landmarks[0];\
+\
+                // \uc0\u35745 \u31639 \u31616 \u21333 \u30340 \u25351 \u23574 \u36317 \u31163 \u20316 \u20026 \'93\u24352 \u24320 \u24230 \'94\
+                const distance = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);\
+                \
+                // \uc0\u24402 \u19968 \u21270 \u36317 \u31163  (\u22823 \u27010 \u33539 \u22260  0.05 \u21040  0.3)\
+                // \uc0\u26144 \u23556 \u21040  0 (\u38381 \u21512 ) \u21040  1 (\u24352 \u24320 )\
+                let openVal = (distance - 0.05) * 5; \
+                openVal = Math.max(0, Math.min(1, openVal));\
+\
+                // \uc0\u24179 \u28369 \u36807 \u28193 \
+                handOpenness += (openVal - handOpenness) * 0.1;\
+            \} else \{\
+                // \uc0\u22914 \u26524 \u27809 \u26377 \u25163 \u65292 \u24930 \u24930 \u22238 \u21040 \u33258 \u28982 \u29366 \u24577  (0.5 \u25110  0)\
+                handOpenness += (0 - handOpenness) * 0.05;\
+            \}\
+            previewCtx.restore();\
+        \}\
+\
+        // ================= UI & \uc0\u20132 \u20114 \u36923 \u36753  =================\
+        function setupUI() \{\
+            // \uc0\u24418 \u29366 \u36873 \u25321 \
+            document.getElementById('shape-select').addEventListener('change', (e) => \{\
+                currentShape = e.target.value;\
+                isDrawingMode = false;\
+                toggleDrawUI(false);\
+                updateTargets(currentShape);\
+            \});\
+\
+            // \uc0\u39068 \u33394 \u36873 \u25321 \
+            document.getElementById('color-picker').addEventListener('input', (e) => \{\
+                baseColor.set(e.target.value);\
+                const colors = geometry.attributes.color.array;\
+                for(let i=0; i<particleCount; i++)\{\
+                    colors[i*3] = baseColor.r;\
+                    colors[i*3+1] = baseColor.g;\
+                    colors[i*3+2] = baseColor.b;\
+                \}\
+                geometry.attributes.color.needsUpdate = true;\
+            \});\
+\
+            // \uc0\u25193 \u25955 \u24230 \
+            document.getElementById('spread-slider').addEventListener('input', (e) => \{\
+                spreadFactor = parseFloat(e.target.value);\
+                document.getElementById('spread-val').innerText = spreadFactor.toFixed(1);\
+            \});\
+\
+            // \uc0\u23494 \u24230 \
+            document.getElementById('density-slider').addEventListener('change', (e) => \{\
+                createParticles(parseInt(e.target.value));\
+            \});\
+\
+            // \uc0\u32472 \u21046 \u27169 \u24335 \u25353 \u38062 \
+            const btn = document.getElementById('draw-mode-btn');\
+            btn.addEventListener('click', () => \{\
+                isDrawingMode = !isDrawingMode;\
+                toggleDrawUI(isDrawingMode);\
+                if(isDrawingMode) \{\
+                    currentShape = 'custom';\
+                    btn.classList.add('active-mode');\
+                    btn.innerText = "\uc0\u23436 \u25104 \u32472 \u21046  (Finish)";\
+                    drawnPoints = []; // \uc0\u28165 \u31354 \u20043 \u21069 \u30340 \
+                    statusEl.innerText = "\uc0\u35831 \u22312 \u23631 \u24149 \u19978 \u28369 \u21160 \u32472 \u21046  / Draw on screen";\
+                \} else \{\
+                    btn.classList.remove('active-mode');\
+                    btn.innerText = "\uc0\u36827 \u20837 \u25163 \u32472 \u27169 \u24335  (Draw)";\
+                    statusEl.innerText = "\uc0\u32472 \u21046 \u23436 \u25104 \u65292 \u31890 \u23376 \u32858 \u21512  / Drawing done";\
+                    updateTargets('custom');\
+                \}\
+            \});\
+        \}\
+\
+        function toggleDrawUI(active) \{\
+            drawCanvas.style.display = active ? 'block' : 'none';\
+            // \uc0\u35843 \u25972  Canvas \u22823 \u23567 \
+            drawCanvas.width = window.innerWidth;\
+            drawCanvas.height = window.innerHeight;\
+            drawCtx.clearRect(0,0,drawCanvas.width, drawCanvas.height);\
+        \}\
+\
+        function setupDrawingEvents() \{\
+            let isDragging = false;\
+            \
+            drawCanvas.addEventListener('mousedown', () => isDragging = true);\
+            drawCanvas.addEventListener('mouseup', () => isDragging = false);\
+            \
+            drawCanvas.addEventListener('mousemove', (e) => \{\
+                if (!isDragging) return;\
+                \
+                const x = e.clientX;\
+                const y = e.clientY;\
+\
+                // 2D \uc0\u32472 \u21046 \u21453 \u39304 \
+                drawCtx.fillStyle = '#00f2ff';\
+                drawCtx.beginPath();\
+                drawCtx.arc(x, y, 2, 0, Math.PI*2);\
+                drawCtx.fill();\
+\
+                // \uc0\u36716 \u25442  2D \u23631 \u24149 \u22352 \u26631 \u21040  3D \u31354 \u38388 \u22352 \u26631 \
+                // \uc0\u36825 \u37324 \u25105 \u20204 \u31616 \u21333 \u22320 \u26144 \u23556 \u21040  z=0 \u30340 \u24179 \u38754 \
+                // \uc0\u23558 \u23631 \u24149 \u22352 \u26631  (-w/2, w/2) \u26144 \u23556 \u21040  3D \u22352 \u26631 \u31995  (\u32422 \u20026  -30, 30 \u21462 \u20915 \u20110 \u25668 \u20687 \u26426 \u36317 \u31163 )\
+                \
+                // \uc0\u26631 \u20934 \u35774 \u22791 \u22352 \u26631 \
+                const vec = new THREE.Vector3();\
+                const pos = new THREE.Vector3();\
+                \
+                vec.set(\
+                    (e.clientX / window.innerWidth) * 2 - 1,\
+                    -(e.clientY / window.innerHeight) * 2 + 1,\
+                    0.5\
+                );\
+                \
+                vec.unproject(camera);\
+                vec.sub(camera.position).normalize();\
+                \
+                const distance = -camera.position.z / vec.z;\
+                pos.copy(camera.position).add(vec.multiplyScalar(distance));\
+                \
+                drawnPoints.push(pos);\
+            \});\
+        \}\
+\
+        function onWindowResize() \{\
+            camera.aspect = window.innerWidth / window.innerHeight;\
+            camera.updateProjectionMatrix();\
+            renderer.setSize(window.innerWidth, window.innerHeight);\
+        \}\
+\
+        // ================= \uc0\u21160 \u30011 \u24490 \u29615  =================\
+        function animate() \{\
+            requestAnimationFrame(animate);\
+\
+            const positionsArr = geometry.attributes.position.array;\
+            const time = Date.now() * 0.001;\
+\
+            // 1. \uc0\u32972 \u26223 \u31890 \u23376 \u32531 \u24930 \u26059 \u36716 \
+            if (bgParticles) \{\
+                bgParticles.rotation.y = time * 0.05;\
+                bgParticles.rotation.x = time * 0.02;\
+            \}\
+\
+            // 2. \uc0\u20027 \u31890 \u23376 \u26356 \u26032 \
+            // \uc0\u25163 \u21183 \u24433 \u21709 \u22240 \u23376 : \u24352 \u24320 (handOpenness -> 1) \u31890 \u23376 \u29190 \u28856 \u25193 \u25955 \
+            // \uc0\u31995 \u25968 \u36234 \u22823 \u65292 \u25193 \u25955 \u36234 \u36828 \
+            const explosionStrength = handOpenness * 20 * spreadFactor; \
+\
+            for (let i = 0; i < particleCount; i++) \{\
+                const ix = i * 3;\
+                const iy = i * 3 + 1;\
+                const iz = i * 3 + 2;\
+\
+                let tx = targets[ix];\
+                let ty = targets[iy];\
+                let tz = targets[iz];\
+\
+                // \uc0\u22914 \u26524 \u27491 \u22312 \u25163 \u32472 \u65292 \u30446 \u26631 \u36824 \u27809 \u30830 \u23450 \u65292 \u31890 \u23376 \u26242 \u26102 \u22260 \u32469 \u20013 \u24515 \u26059 \u36716 \
+                if (isDrawingMode && currentShape === 'custom') \{\
+                    tx = Math.sin(time + i) * 10;\
+                    ty = Math.cos(time + i) * 10;\
+                    tz = 0;\
+                \}\
+\
+                // --- \uc0\u29289 \u29702 \u35745 \u31639  ---\
+                \
+                // 1. \uc0\u33719 \u21462 \u24403 \u21069 \u20301 \u32622 \
+                let px = positionsArr[ix];\
+                let py = positionsArr[iy];\
+                let pz = positionsArr[iz];\
+\
+                // 2. \uc0\u22522 \u30784 \u36816 \u21160 \u65306 \u21521 \u30446 \u26631 \u28857 \u25554 \u20540  (Lerp)\
+                // \uc0\u36895 \u24230 \u31995 \u25968  0.05\u65292 \u36234 \u23567 \u36234 \u24179 \u28369 \
+                const speed = 0.05 + Math.random() * 0.02;\
+                px += (tx - px) * speed;\
+                py += (ty - py) * speed;\
+                pz += (tz - pz) * speed;\
+\
+                // 3. \uc0\u21472 \u21152 \u25163 \u21183 \u24433 \u21709  (\u25193 \u25955 )\
+                // \uc0\u22522 \u20110 \u21407 \u26412 \u30340 \u30446 \u26631 \u26041 \u21521 \u25110 \u32773 \u38543 \u26426 \u26041 \u21521 \u28155 \u21152 \u20559 \u31227 \
+                if (handOpenness > 0.1) \{\
+                    // \uc0\u31616 \u21333 \u30340 \u22122 \u22768 \u25193 \u25955 \
+                    const noiseX = (Math.random() - 0.5) * explosionStrength;\
+                    const noiseY = (Math.random() - 0.5) * explosionStrength;\
+                    const noiseZ = (Math.random() - 0.5) * explosionStrength;\
+                    \
+                    // \uc0\u35753 \u31890 \u23376 \u31245 \u24494 \u36828 \u31163 \u20013 \u24515 \
+                    px += px * (handOpenness * 0.1) + noiseX;\
+                    py += py * (handOpenness * 0.1) + noiseY;\
+                    pz += pz * (handOpenness * 0.1) + noiseZ;\
+                \}\
+\
+                // 4. \uc0\u21472 \u21152 \u21628 \u21560 \u25928 \u26524  (Idle \u21160 \u30011 )\
+                if (handOpenness < 0.2 && !isDrawingMode) \{\
+                    const breath = Math.sin(time * 2 + px * 0.1) * 0.05;\
+                    px += breath;\
+                    py += breath;\
+                \}\
+\
+                // \uc0\u26356 \u26032 \u20301 \u32622 \
+                positionsArr[ix] = px;\
+                positionsArr[iy] = py;\
+                positionsArr[iz] = pz;\
+            \}\
+\
+            geometry.attributes.position.needsUpdate = true;\
+\
+            // 3. \uc0\u22330 \u26223 \u32531 \u24930 \u26059 \u36716 \
+            if (!isDrawingMode) \{\
+                particles.rotation.y += 0.002;\
+            \}\
+\
+            renderer.render(scene, camera);\
+        \}\
+    </script>\
+</body>\
+</html>}
